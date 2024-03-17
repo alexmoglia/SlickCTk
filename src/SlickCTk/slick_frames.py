@@ -1,5 +1,5 @@
 from customtkinter import CTkFrame
-from slick_settings import COLOR_OUTLINES, FRAME_BORDER_WIDTH
+from SlickCTk.slick_settings import COLOR_OUTLINES, FRAME_BORDER_WIDTH
 
 
 class SlickFrame(CTkFrame):
@@ -59,7 +59,7 @@ class SlickFrameOutlined(SlickFrame):
 
 if __name__ == "__main__":
     import customtkinter as ctk
-    from slick_searchbar import SlickSearchbar
+    from SlickCTk.slick_searchbar import SlickSearchbar
 
     app = ctk.CTk()
     app.title("SlickFrame Demo")

@@ -27,12 +27,12 @@ TODO
 """
 
 import tkinter as tk
-from typing import Callable, Optional
-from customtkinter import CTkFrame, CTk, CTkBaseClass
-from slick_buttons import ContextMenuButton, SubmenuButton
-from utilities.dpi_scaler import DPIScaler
+from typing import Callable, Any
+from customtkinter import CTkFrame, CTk
+from SlickCTk.slick_buttons import ContextMenuButton, SubmenuButton
+from SlickCTk.utilities.dpi_scaler import DPIScaler
 
-from slick_settings import (
+from SlickCTk.slick_settings import (
     MENU_COLOR_BACKGROUND,
     MENU_COLOR_OUTLINE,
     MENU_PADDING_X,
@@ -56,7 +56,7 @@ class SlickContextMenu(CTkFrame):
             **kwargs,
         )
 
-        self.root = parent
+        self.root: Any = parent
         self.dpi_scaler = DPIScaler()
         self.len_menu_choices: int = len(menu_choices)
 
@@ -267,19 +267,20 @@ class _ContextMenuSubframe(CTkFrame):
 
         for button_text, button_content in menu_choices.items():
             if isinstance(button_content, Callable):
-                self.add_commmand(
-                    button_text, button_content
-                )
+                self.add_button(button_text, button_content)
 
             elif isinstance(button_content, dict):
-                button: SubmenuButton = self.add_commmand(button_text, None)
+                button: SubmenuButton = self.add_submenu_button(button_text)
                 self.add_submenu(button, button_content)
 
-    def add_commmand(
-        self, button_text: str, button_command: Callable | None
-    ) -> SubmenuButton:
-        """Create and place menu buttons"""
-        button = SubmenuButton(self, text=button_text, command=button_command)
+    def add_button(self, button_text: str, button_command: Callable) -> None:
+        """Create and place menu button"""
+        button = ContextMenuButton(self, text=button_text, command=button_command)
+        button.pack(expand=True, fill="both")
+
+    def add_submenu_button(self, button_text: str) -> SubmenuButton:
+        """Create and place submenu button"""
+        button = SubmenuButton(self, text=button_text, command=None)
         button.pack(expand=True, fill="both")
         return button
 
@@ -356,15 +357,19 @@ class _ContextMenuSubframe(CTkFrame):
             return ".!slickcontextmenu2" in ".!slickcontextmenu2.!_contextmenusubframe
             .!contextmenubutton"
         """
-        
+
         hovered_widget: str = self.get_widget_at_mouse().winfo_parent()
         return submenu.winfo_name() in hovered_widget
 
-    def get_widget_at_mouse(self) :
+    def get_widget_at_mouse(self) -> tk.Misc:
         """Get the mouse's x and y position and find the widget in that position"""
         x, y = self.winfo_pointerxy()
         widget = self.winfo_containing(x, y)
-        return widget
+
+        if widget is not None:
+            return widget
+        else:
+            return self
 
 
 if __name__ == "__main__":

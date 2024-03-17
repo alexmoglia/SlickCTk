@@ -1,7 +1,6 @@
-# pylint: disable=missing-class-docstring, missing-function-docstring
-# pylint: disable=missing-module-docstring, 
+# pylint: disable=missing-module-docstring,
 
-from utilities.digsby.load_custom_font import load_font
+from SlickCTk.utilities.digsby.load_custom_font import load_font
 
 load_font("./src/SlickCTk/resources/fonts/Nunito-Bold.ttf")
 

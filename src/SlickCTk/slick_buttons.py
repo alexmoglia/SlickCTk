@@ -2,11 +2,11 @@
 # pylint: disable=missing-module-docstring,
 
 from tkinter import Variable
-from typing import Callable, Tuple, Union, Optional
+from typing import Callable, Tuple, Union, Optional, Any
 from customtkinter import CTkButton
 from customtkinter.windows.widgets.font import CTkFont
 from customtkinter.windows.widgets.image import CTkImage
-from slick_settings import (
+from SlickCTk.slick_settings import (
     BUTTON_COLOR_TEXT,
     BUTTON_COLOR_BACKGROUND,
     BUTTON_COLOR_HOVER,
@@ -22,7 +22,7 @@ from slick_settings import (
 class SlickButton(CTkButton):
     def __init__(
         self,
-        master: any,
+        master: Any,
         width: int = 140,
         height: int = 28,
         corner_radius: Optional[int] = BUTTON_CORNER_RADIUS,
