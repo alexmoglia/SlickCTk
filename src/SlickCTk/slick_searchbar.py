@@ -13,8 +13,8 @@ TODO:
 
 from tkinter import Canvas, font
 from customtkinter import CTkEntry, StringVar
-from utilities.dpi_scaler import DPIScaler
-from slick_settings import (
+from SlickCTk.utilities.dpi_scaler import DPIScaler
+from SlickCTk.slick_settings import (
     COLOR_APP_BACKGROUND,
     COLOR_TEXT,
     SEARCHBAR_COLOR_OUTLINE,
@@ -187,7 +187,7 @@ class _XButtonCanvas(Canvas):
 
 if __name__ == "__main__":
     import customtkinter as ctk
-    from slick_frames import SlickFrame
+    from SlickCTk.slick_frames import SlickFrame
 
     app = ctk.CTk()
     app.title("SlickSearchbar Demo")

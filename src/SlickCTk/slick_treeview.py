@@ -1,9 +1,8 @@
 # pylint: disable=missing-class-docstring, missing-function-docstring
 # pylint: disable=missing-module-docstring,
 
-
 from tkinter.ttk import Treeview, Style
-from slick_settings import (
+from SlickCTk.slick_settings import (
     TREEVIEW_COLOR_HEADING,
     TREEVIEW_COLOR_TEXT,
     TREEVIEW_COLOR_ROW_SELECTED,
@@ -115,7 +114,7 @@ class SlickStyleTreeview(Style):
 
 if __name__ == "__main__":
     import customtkinter as ctk
-    from slick_frames import SlickFrameOutlined
+    from SlickCTk.slick_frames import SlickFrameOutlined
 
     app = ctk.CTk()
     app.title("SlickTreeview Demo")
