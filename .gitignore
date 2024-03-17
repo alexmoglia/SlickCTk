@@ -1,9 +1,9 @@
-# Byte-compiled / optimized / DLL files
+### Byte-compiled / Optimized / DLL files ###
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Distribution / packaging
+### Distribution / Packaging ###
 .Python
 build/
 develop-eggs/
@@ -23,21 +23,21 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
+### PyInstaller ###
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 # *.spec
 
-# Installer logs
+### Logs - Installer ###
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Application logs
+### Logs - Application ###
 *.log
 *.log.jsonl
 
-# Unit test / coverage reports
+### Tests / Coverage ###
 htmlcov/
 .tox/
 .nox/
@@ -52,11 +52,11 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# PyBuilder
+### PyBuilder ###
 .pybuilder/
 target/
 
-# Environments
+### Environments ###
 .env
 .venv
 env/
@@ -65,5 +65,8 @@ ENV/
 env.bak/
 venv.bak/
 
-# Linting
+### Linting ###
 .pylintrc
+
+### VisualStudioCode ###
+.vscode/
