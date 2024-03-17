@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SlickCTk"
+version = "0.0.1"
+description = "Extendeds CustomTKinter with additional widgets"
+authors = [{name = "Alex Moglia", email = "alexmoglia@gmail.com"},]
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+dependencies = [
+  "customtkinter>=5.2.2",
+  "darkdetect>=0.8.0",
+  "pywin32>=306",
+  "packaging>=23.2",
+  "Pillow>=10.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "coverage>=7.4.3",
+  "pytest>=8.1.1",
+  "setuptools>=69.2.0",
+  "wheel>=0.43.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
