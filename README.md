@@ -14,7 +14,7 @@ Additional widgets and biased defaults to extend CustomTKinter (work in progress
 - Automatically handles menu spill (adjusting left<>right and up<>down to stay inside the app window).
 - Menu placement accounts for DPI / screen scaling
 
-### SlickSearchbar (searchbars)
+### SlickSearchbar
 - Placeholder text dynamically added/removed
 - X button for clearing the searchbar text
 

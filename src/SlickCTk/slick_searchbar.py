@@ -8,7 +8,7 @@ Features:
 TODO:
     - Animated/expandable searchbar (small initial width, click in and it expands [to 
     the right or from the center out in both directions])
-    
+    - Allow passing None to placeholder to make empty searchbar
 """
 
 from tkinter import Canvas, font
@@ -17,6 +17,7 @@ from SlickCTk.utilities.dpi_scaler import DPIScaler
 from SlickCTk.slick_settings import (
     COLOR_APP_BACKGROUND,
     COLOR_TEXT,
+    SEARCHBAR_DEFAULT_PLACEHOLDER,
     SEARCHBAR_COLOR_OUTLINE,
     SEARCHBAR_COLOR_OUTLINE_FOCUS,
     SEARCHBAR_COLOR_PLACEHOLDER,
@@ -36,13 +37,12 @@ class SlickSearchbar(CTkEntry):
         "X" Button (Clear text)
             Appears after the first character is typed in the Searchbar; removed
             when the Searchbar is empty.
-
     """
 
     def __init__(
         self,
         parent,
-        placeholder: str = "Search...",
+        placeholder: str = SEARCHBAR_DEFAULT_PLACEHOLDER,
         height: int = 10,
         width: int = 250,
         corner_radius: int = 20,
@@ -52,9 +52,14 @@ class SlickSearchbar(CTkEntry):
         border_color: str = SEARCHBAR_COLOR_OUTLINE,
         border_width: int = 2,
         **kwargs,
-    ):
-        self.search_term = StringVar(parent, "Search...")
-        self.placeholder = placeholder
+    ) -> None:
+
+        if placeholder is not SEARCHBAR_DEFAULT_PLACEHOLDER:
+            self.placeholder: str = placeholder
+        else:
+            self.placeholder = placeholder
+
+        self.search_term = StringVar(parent, self.placeholder)
 
         super().__init__(
             parent,
@@ -66,7 +71,7 @@ class SlickSearchbar(CTkEntry):
             border_color=border_color,
             border_width=border_width,
             textvariable=self.search_term,
-            placeholder_text=placeholder,
+            placeholder_text=self.placeholder,
             **kwargs,
         )
 
@@ -193,6 +198,6 @@ if __name__ == "__main__":
     app.title("SlickSearchbar Demo")
     app.geometry("300x100")
     frame = SlickFrame(app, fg_color=COLOR_APP_BACKGROUND)
-    SlickSearchbar(frame).pack(pady=30)
+    SlickSearchbar(frame, placeholder="Searchbar demo...").pack(pady=30)
     frame.pack(expand=True, fill="both")
     app.mainloop()

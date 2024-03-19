@@ -28,14 +28,14 @@ class SlickTreeview(Treeview):
     def on_click(self, event):
         # Region will be "heading", "cell", "separator", or "tree"
         region = self.identify("region", event.x, event.y)
-        
+
         if region != "cell":  # only process click if on a cell (row)
             return None
-        
+
         # selected_rows = self.selection() # multi-select
         clicked_row = self.identify_row(event.y)  # find clicked treeview item
         # clicked_column = self.identify_column(event.x)
-        
+
         return self.select_row(clicked_row)  # return row values for copying
 
     def select_row(self, row):
