@@ -45,7 +45,10 @@ PRINT_DEBUG: bool = False
 
 class SlickContextMenu(CTkFrame):
     def __init__(
-        self, parent, menu_choices: dict[str, Callable | dict], **kwargs
+        self,
+        parent,
+        menu_choices: dict[str, Callable | dict[str, Callable | dict]],
+        **kwargs,
     ) -> None:
         super().__init__(
             parent,
@@ -253,7 +256,12 @@ class SlickContextMenu(CTkFrame):
 
 
 class _ContextMenuSubframe(CTkFrame):
-    def __init__(self, parent, root: CTk, menu_choices: dict) -> None:
+    def __init__(
+        self,
+        parent,
+        root: CTk,
+        menu_choices: dict[str, Callable | dict[str, Callable | dict]],
+    ) -> None:
         super().__init__(parent, fg_color="transparent", corner_radius=0)
 
         self.parent: SlickContextMenu = parent
