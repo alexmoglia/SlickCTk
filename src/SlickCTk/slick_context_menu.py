@@ -71,10 +71,11 @@ class SlickContextMenu(CTkFrame):
             pady=MENU_PADDING_Y,
         )
 
-        self.descendants: list = self.get_all_descendants(self)
+        self.descendants: list[tk.Misc] = self.get_all_descendants(self)
+        self.descendant_submenus: list[SlickContextMenu] = [
+            d for d in self.descendants if isinstance(d, SlickContextMenu)
+        ]
 
-        # self.bind("<Leave>", lambda e: self.check_should_menu_close())
-        # self.bind("<FocusIn>", lambda e: print("IN"))
         self.bind("<FocusOut>", lambda e: self.check_should_menu_close())
 
     def handle_right_click(self, event) -> None:
@@ -154,7 +155,7 @@ class SlickContextMenu(CTkFrame):
                 print(f"Normalized y spill: {normalized_y_spill}")
                 print(f"Final x, y: {x, y}")
 
-        submenu_shift: int = 6
+        submenu_shift: int = 4
 
         scale_factor: float = self.dpi_scaler.get_scale_factor()
 
@@ -207,7 +208,7 @@ class SlickContextMenu(CTkFrame):
 
     def open_menu(self, x: float, y: float) -> None:
         """Open the SlickContextMenu at the passed coords, and give focus to menu"""
-        self.place(x=x, y=y)
+        self.after(200, lambda: self.place(x=x, y=y))
         self.focus_set()
 
     def configure_window(self) -> None:
@@ -215,17 +216,15 @@ class SlickContextMenu(CTkFrame):
 
     def close_menu(self) -> None:
         """Close the SlickContextMenu"""
+        for submenu in self.descendant_submenus:
+            submenu.close_menu()
         self.place_forget()
 
     def check_should_menu_close(self) -> None:
-        """Check if submenu should close. Mouse must be hovering over submenu-button or
+        """Check if menu should close. Mouse must be hovering over menu or
         submenu in order to stay open)"""
 
-        print(f"Checking if {self} should close")
-
-        if self.is_any_submenu_hovered():
-            pass
-        else:
+        if not self.is_any_submenu_hovered() or self.is_any_submenu_open():
             self.close_menu()
 
     def is_any_submenu_hovered(self) -> bool:
@@ -238,13 +237,19 @@ class SlickContextMenu(CTkFrame):
         hovered_widget = self.get_widget_at_mouse()
         return hovered_widget in self.descendants
 
+    def is_any_submenu_open(self) -> bool:
+        for submenu in self.descendant_submenus:
+            if submenu.winfo_ismapped():
+                return True
+        return False
+
     def get_widget_at_mouse(self):
         """Get the mouse's x and y position and find the widget in that position"""
         x, y = self.winfo_pointerxy()
         widget = self.winfo_containing(x, y)
         return widget
 
-    def get_all_descendants(self, widget) -> list:
+    def get_all_descendants(self, widget: CTkFrame) -> list[tk.Misc]:
         descendants: list = []
         children: list = widget.winfo_children()
         for child in children:
@@ -268,7 +273,8 @@ class _ContextMenuSubframe(CTkFrame):
         self.root: CTk = root
         self.submenu_is_open = False
         self.process_menu_choices(menu_choices)
-        # self.get_widget_at_mouse()
+
+        self.descendants: list = self.parent.get_all_descendants(self)
 
     def process_menu_choices(self, menu_choices: dict) -> None:
         """Iterate through dict and create buttons and submenus"""
@@ -296,25 +302,18 @@ class _ContextMenuSubframe(CTkFrame):
         """Create submenu and add hover bindings"""
 
         submenu = SlickContextMenu(self.root, menu_subitems)
-        submenu.bind(
-            "<Leave>", lambda e: self.check_submenu_should_close(submenu, button)
-        )
+        submenu.bind("<Leave>", lambda e: self.delay_submenu_close(submenu, button))
 
         button.bind("<Enter>", lambda e: self.submenu_button_hover_in(submenu, button))
-        button.bind(
-            "<Leave>", lambda e: self.check_submenu_should_close(submenu, button)
-        )
+        button.bind("<Leave>", lambda e: self.delay_submenu_close(submenu, button))
 
     def submenu_button_hover_in(
         self, submenu: SlickContextMenu, button: SubmenuButton
     ) -> None:
-        """Hover controls for submenu-hover-buttons (the button in the main main that
-        causes a submenu frame to open when the button is hovered over; not the buttons
-        in the submenu themselves)"""
-
-        x, y = self.calc_submenu_position(submenu, button)
-
-        submenu.open_menu(x, y)
+        """Hover controls for submenu-buttons"""
+        if not submenu.winfo_ismapped():
+            x, y = self.calc_submenu_position(submenu, button)
+            submenu.open_menu(x, y)
 
     def calc_submenu_position(
         self, submenu: SlickContextMenu, button: SubmenuButton
@@ -322,27 +321,39 @@ class _ContextMenuSubframe(CTkFrame):
         """Submenus need to be offset so that they don't open on top of the main menu.
         First, we set the inital x position by getting the main menu's rootx position and
         adding it's own width to it, which gives us an x position farther to the right.
+        If the submenu needs to open to the left of the main menu, that will be handled
+        in the calc_menu_position() method.
+
         Second, we set the initial y position by finding the y position of the submenu
         button and subtracting a small amount, which gives us a y position farther up.
+        Moving it up slightly make it easier for the user to stay inside the submenu when
+        moving the mouse quickly.
 
         Since Submenus are themselves instances of SlickContextMenus, we use the
-        calc_menu_position() func to apply more adjustments to the x position. The
+        calc_menu_position() method to apply more adjustments to the x position. The
         menu_depth argument is used as a multiplier to shift the submenu appropriately
         when there in spill."""
 
         def __print_debug() -> None:
-            print(f"{self.parent.winfo_rootx()=}")
-            print(f"{self.parent.winfo_width()=}")
+            if PRINT_DEBUG:
+                print(f"{self.parent.winfo_rootx()=}")
+                print(f"{self.parent.winfo_width()=}")
+                print(f"{shift_submenu_x=}")
+                print(f"{shift_submenu_y=}")
 
         shift_submenu_x: int = self.parent.winfo_rootx() + self.parent.winfo_width()
-        shift_submenu_y: int = button.winfo_rooty() - 10
+        shift_submenu_y: int = button.winfo_rooty() - 8
 
-        if PRINT_DEBUG:
-            __print_debug()
+        __print_debug()
 
         return submenu.calc_menu_position(
             shift_submenu_x, shift_submenu_y, menu_depth=2
         )
+
+    def delay_submenu_close(
+        self, submenu: SlickContextMenu, button: SubmenuButton
+    ) -> None:
+        self.after(500, lambda: self.check_submenu_should_close(submenu, button))
 
     def check_submenu_should_close(
         self, submenu: SlickContextMenu, button: SubmenuButton
@@ -355,8 +366,11 @@ class _ContextMenuSubframe(CTkFrame):
             submenu.close_menu()
 
     def is_submenu_button_hovered(self, button: SubmenuButton) -> bool:
-        """Check if the submenu-button is being hovered over"""
-        return self.get_widget_at_mouse() == button
+        """Check if the submenu-button is being hovered over. The actual widget being
+        hovered is usually a CTkLabel or CTkCanvas, so we actually check if the hovered
+        widget's master is the submenu-button itself."""
+
+        return self.get_widget_at_mouse().master is button
 
     def is_submenu_hovered(self, submenu: SlickContextMenu) -> bool:
         """Get the hovered widget's parent (a string representing the tkinter hierarchy
@@ -419,9 +433,6 @@ if __name__ == "__main__":
     app.bind("<Button-3>", menu.handle_right_click)
     app.bind("<ButtonPress-1>", lambda e: menu.close_menu())
     app.bind("<Configure>", lambda e: menu.configure_window())
-
-    menu.open_menu(0, 0)
-    menu.close_menu()
 
     app.mainloop()
 
