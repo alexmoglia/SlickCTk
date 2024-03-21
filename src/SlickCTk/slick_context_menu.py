@@ -23,7 +23,8 @@ TODO
     * Context-menu height & width defaults / mins / maxs
     * > arrow added to submenu strings, justified to right side
     * white space padding on button text
-    * focus lost closes main menu, hover off submenu closes submenu 
+    * wrapper for funcs in menu_choices to handle closing menus when button clicked
+    * set submen-button color to hover color when submenu open (right now it reverts to non-hovered color when you enter the submenu)
 """
 
 import tkinter as tk
@@ -40,7 +41,7 @@ from SlickCTk.slick_settings import (
     MENU_CORNER_RADIUS_ROUNDED,
 )
 
-PRINT_DEBUG: bool = True
+PRINT_DEBUG: bool = False
 
 
 class SlickContextMenu(CTkFrame):
@@ -71,15 +72,13 @@ class SlickContextMenu(CTkFrame):
             pady=MENU_PADDING_Y,
         )
 
-        self.descendants: list[tk.Misc] = self.get_all_descendants(self)
-        self.descendant_submenus: list[SlickContextMenu] = [
-            d for d in self.descendants if isinstance(d, SlickContextMenu)
-        ]
+        self.descendants: list[tk.Misc] = self.get_all_descendants(self)  # NOT USED
 
-        self.bind("<FocusOut>", lambda e: self.check_should_menu_close())
+        # self.bind("<FocusOut>", lambda e: self.check_should_menu_close())
 
     def handle_right_click(self, event) -> None:
         """Get the corrected x and y for menu placement and open the menu"""
+        self.close_all_submenus()
         x, y = self.calc_menu_position(event.x_root, event.y_root)
         self.open_menu(x, y)
 
@@ -232,14 +231,15 @@ class SlickContextMenu(CTkFrame):
         self.place_forget()
 
     def close_all_submenus(self) -> None:
-        for submenu in self.descendant_submenus:
+        for submenu in self.menu_subframe.descendant_submenus:
+            self.focus_set()
             submenu.close_menu()
 
     def check_should_menu_close(self) -> None:
         """Check if menu should close. Mouse must be hovering over menu or
         submenu in order to stay open)"""
-
-        if not self.is_any_submenu_hovered() or self.is_any_submenu_open():
+        print("IN CHECK SHOULD MENU CLOSE")
+        if not self.is_any_submenu_hovered() or not self.is_any_submenu_open():
             self.close_menu()
 
     def is_any_submenu_hovered(self) -> bool:
@@ -250,10 +250,13 @@ class SlickContextMenu(CTkFrame):
             .!contextmenubutton"
         """
         hovered_widget = self.get_widget_at_mouse()
-        return hovered_widget in self.descendants
+
+        print(f"{hovered_widget} in {self.menu_subframe.descendant_submenus}")
+
+        return hovered_widget in self.menu_subframe.descendant_submenus
 
     def is_any_submenu_open(self) -> bool:
-        for submenu in self.descendant_submenus:
+        for submenu in self.menu_subframe.descendant_submenus:
             if submenu.winfo_ismapped():
                 return True
         return False
@@ -287,14 +290,19 @@ class _ContextMenuSubframe(CTkFrame):
         self.root: CTk = root
         self.parent: SlickContextMenu = parent
         self.submenu_is_open = False
+        self.descendant_submenus: list[SlickContextMenu] = []
+
         self.process_menu_choices(menu_choices)
 
-        self.descendants: list = self.parent.get_all_descendants(self)
+        # self.descendants: list = self.parent.get_all_descendants(self)
 
     def process_menu_choices(self, menu_choices: dict) -> None:
         """Iterate through dict and create buttons and submenus"""
 
         for button_text, button_content in menu_choices.items():
+            text_padding = "    "
+            button_text: str = rf"{text_padding}{button_text}"
+
             if isinstance(button_content, Callable):
                 self.add_button(button_text, button_content)
 
@@ -317,8 +325,10 @@ class _ContextMenuSubframe(CTkFrame):
         """Create submenu and add hover bindings"""
 
         submenu = SlickContextMenu(self.root, menu_subitems)
+        submenu.bind("<FocusIn>", self.focus_set)
         submenu.bind(
-            "<Leave>", lambda e: self.delay_check_submenu_should_close(submenu, button)
+            "<FocusOut>",
+            lambda e: self.delay_check_submenu_should_close(submenu, button),
         )
 
         button.bind("<Enter>", lambda e: self.submenu_button_hover_in(submenu, button))
@@ -326,33 +336,38 @@ class _ContextMenuSubframe(CTkFrame):
             "<Leave>", lambda e: self.delay_check_submenu_should_close(submenu, button)
         )
 
+        self.descendant_submenus.append(submenu)
+
     def submenu_button_hover_in(
         self, submenu: SlickContextMenu, button: SubmenuButton
     ) -> None:
         """Open submenu when submenu-button hovered if not already open."""
         self.delay_check_submenu_should_open(submenu, button)
-        # self.parent
 
     def delay_check_submenu_should_open(
         self, submenu: SlickContextMenu, button: SubmenuButton
-    ):
-        self.after(250, lambda: self.check_submenu_should_open(submenu, button))
+    ) -> None:
+        self.after(200, lambda: self.check_submenu_should_open(submenu, button))
 
     def check_submenu_should_open(
         self, submenu: SlickContextMenu, button: SubmenuButton
-    ):
+    ) -> None:
+        """Submenu will open if the Mainmenu is visible, the Submenu isn't already open,
+        and if the Submenu button is being hovered. Any Submenu already open is closed
+        before opening the new one to ensure the undesired submenu doesn't stay open
+        longer than it should."""
         if (
             self.parent.winfo_ismapped()
             and not submenu.winfo_ismapped()
             and self.is_submenu_button_hovered(button)
         ):
+            self.parent.close_all_submenus()
             self.open_submenu(submenu, button)
 
     def open_submenu(self, submenu: SlickContextMenu, button: SubmenuButton) -> None:
         """Calculate x,y for submenu and open it."""
         x, y = self.calc_submenu_position(submenu, button)
         submenu.open_menu(x, y)
-        self.delay_check_submenu_should_close(submenu, button)
 
     def calc_submenu_position(
         self, submenu: SlickContextMenu, button: SubmenuButton
@@ -380,8 +395,10 @@ class _ContextMenuSubframe(CTkFrame):
                 print(f"{shift_submenu_x=}")
                 print(f"{shift_submenu_y=}")
 
+        shift_y_amount: int = 4
+
         shift_submenu_x: int = self.parent.winfo_rootx() + self.parent.winfo_width()
-        shift_submenu_y: int = button.winfo_rooty() - 8
+        shift_submenu_y: int = button.winfo_rooty() - shift_y_amount
 
         __print_debug()
 
@@ -392,6 +409,13 @@ class _ContextMenuSubframe(CTkFrame):
     def delay_check_submenu_should_close(
         self, submenu: SlickContextMenu, button: SubmenuButton
     ) -> None:
+        """Delay checking if the submenu should close. This requires the user to
+        intentionally satisfy one of the requirements for longer than an instant check
+        would take, and also fudges the time of the check so the user can leave one of
+        the conditions and return. For example, if you move your mouse too quickly from
+        the submenu button to the submenu, you might accidentally exit the submenu button
+        before entering the submenu - if we did an instant check, the menu would close
+        when the user didn't want it to."""
         self.after(500, lambda: self.check_submenu_should_close(submenu, button))
 
     def check_submenu_should_close(
@@ -471,6 +495,7 @@ if __name__ == "__main__":
     app.bind("<Button-3>", menu.handle_right_click)
     app.bind("<ButtonPress-1>", lambda e: menu.close_menu())
     app.bind("<Configure>", lambda e: menu.configure_window())
+    app.bind("<FocusIn>", lambda e: print(e.widget))
 
     app.mainloop()
 
