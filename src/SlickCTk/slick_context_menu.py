@@ -83,7 +83,7 @@ class SlickContextMenu(CTkFrame):
         self.open_menu(x, y)
 
     def calc_menu_position(
-        self, x_in: int, y_in: int, menu_depth: int = 1
+        self, x_in: int, y_in: int, menu_depth: int = 1, parent_menu_width: int = 0
     ) -> tuple[float, float]:
         """Adjusts input x and y coordinates to open a menu in the right location. When
         this function is called by a mouse click, `x` and `y` should be event.x_root and
@@ -141,16 +141,15 @@ class SlickContextMenu(CTkFrame):
         """
 
         def __print_debug() -> None:
-            if PRINT_DEBUG:
-                print("==================================")
-                print(f"Window height: {window_height}")
-                print(f"Window width:  {window_width}")
-                print(f"Menu height: {menu_height}")
-                print(f"Menu width: {menu_width}")
-                print(f"Screen x, y: {screen_x, screen_y}")
-                print(f"Scren x, y end: {screen_x_end, screen_y_end}")
-                print(f"DPI Normalized x, y: {normalized_x, normalized_y}")
-                print(f"Final x, y: {x, y}")
+            print("==================================")
+            print(f"Window h, w: {window_height, window_width}")
+            print(f"Menu h, w: {menu_height, menu_width}")
+            print(f"Event x, y: {x_in, y_in}")
+            print(f"Root x, y: {root_x, root_y}")
+            print(f"Screen x, y: {screen_x, screen_y}")
+            print(f"Scren x, y end: {screen_x_end, screen_y_end}")
+            print(f"DPI Normalized x, y: {normalized_x, normalized_y}")
+            print(f"Final x, y: {x, y}")
 
         # INITIAL VALUES
         submenu_shift: int = 4
@@ -204,16 +203,26 @@ class SlickContextMenu(CTkFrame):
             # screen_x_spill: float = screen_x_end - window_width  # NOT USED
 
             if menu_depth == 1:
-                x = x - (menu_width * menu_depth / scale_factor)
+                x = x - (menu_width / scale_factor)
                 # x = x - (normalized_x_spill / scale_factor)  # ALTERNATE METHOD
 
             elif menu_depth > 1:
-                x = x - (menu_width * menu_depth / scale_factor) + submenu_shift
+                x = (
+                    x
+                    - ((parent_menu_width + menu_width) / scale_factor)
+                    + submenu_shift
+                )
         else:
             if menu_depth > 1:
                 x = x - submenu_shift
 
-        __print_debug()
+        print(f"pre-x: {x}")
+
+        if x < 0:
+            x = (window_width - menu_width) / scale_factor
+
+        if PRINT_DEBUG:
+            __print_debug()
 
         return x, y
 
@@ -389,21 +398,26 @@ class _ContextMenuSubframe(CTkFrame):
         when there in spill."""
 
         def __print_debug() -> None:
-            if PRINT_DEBUG:
-                print(f"{self.parent.winfo_rootx()=}")
-                print(f"{self.parent.winfo_width()=}")
-                print(f"{shift_submenu_x=}")
-                print(f"{shift_submenu_y=}")
+            print(f"{self.parent.winfo_rootx()=}")
+            print(f"{self.parent.winfo_width()=}")
+            print(f"{self.parent.winfo_reqwidth()=}")
+            print(f"{shift_submenu_x=}")
+            print(f"{shift_submenu_y=}")
 
         shift_y_amount: int = 4
 
         shift_submenu_x: int = self.parent.winfo_rootx() + self.parent.winfo_width()
         shift_submenu_y: int = button.winfo_rooty() - shift_y_amount
+        parent_menu_width: int = self.parent.winfo_width()
 
-        __print_debug()
+        if PRINT_DEBUG:
+            __print_debug()
 
         return submenu.calc_menu_position(
-            shift_submenu_x, shift_submenu_y, menu_depth=2
+            shift_submenu_x,
+            shift_submenu_y,
+            menu_depth=2,
+            parent_menu_width=parent_menu_width,
         )
 
     def delay_check_submenu_should_close(
@@ -467,21 +481,21 @@ if __name__ == "__main__":
         "Copy": lambda: print("Copy"),
         "Cut": lambda: print("Cut"),
         "Paste": lambda: print("Paste"),
-        "Submenu": {
+        "Submenu Button with a really long name for testing": {
             "Sub-Copy": lambda: print("Sub-Copy"),
             "Sub-Cut": lambda: print("Sub-Cut"),
             "Sub-Paste": lambda: print("Sub-Paste"),
         },
-        "Copy1": lambda: print("Copy"),
+        "Button with a really long name": lambda: print("Copy"),
         "Cut1": lambda: print("Cut"),
         "Paste1": lambda: print("Paste"),
         "Submenu1": {
             "Sub-Copy1": lambda: print("Sub-Copy"),
             "Sub-Cut1": lambda: print("Sub-Cut"),
-            "SubSubMenu": {
+            "SubSubMenu With a long name too for testing": {
                 "Sub-Copy1": lambda: print("Sub-Copy"),
                 "Sub-Cut1": lambda: print("Sub-Cut"),
-                "SubSubMenu": {
+                "SubSubSubmenu3": {
                     "Sub-Copy1": lambda: print("Sub-Copy"),
                     "Sub-Cut1": lambda: print("Sub-Cut"),
                     "Sub-Paste1": lambda: print("Sub-Paste"),
